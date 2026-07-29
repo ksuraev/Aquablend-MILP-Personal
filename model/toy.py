@@ -40,12 +40,8 @@ prob = pulp.LpProblem("toy", pulp.LpMinimize)
 
 # Decision variables: alpha_s (binary) and a_s (continuous)
 # Dict {s: pulp.LpVariable(...) for s in sources} gives you one variable per source, then reference by name (alpha["s1"])
-alpha = {
-    s: pulp.LpVariable(f"alpha_{s}", cat="Binary") for s in sources
-}  # alpha_s: "is source s turned on?"
-a = {
-    s: pulp.LpVariable(f"a_{s}", lowBound=0) for s in sources
-}  # a_s: "how much do we draw from source s?"
+alpha = {s: pulp.LpVariable(f"alpha_{s}", cat="Binary") for s in sources}  # alpha_s: "is source s turned on?"
+a = {s: pulp.LpVariable(f"a_{s}", lowBound=0) for s in sources}  # a_s: "how much do we draw from source s?"
 
 
 # Objective
@@ -101,9 +97,7 @@ for s in sources:
 if pulp.LpStatus[prob.status] == "Optimal":
 
     # Cost breakdown: same three terms as the objective, computed separately to see which one is driving the cost
-    activation_cost = sum(
-        source_activation_cost[s] * round(alpha[s].value()) for s in sources
-    )
+    activation_cost = sum(source_activation_cost[s] * round(alpha[s].value()) for s in sources)
     drawing_cost = sum(source_unit_cost[s] * a[s].value() for s in sources)
     treatment_cost = treatment_cost_per_ml * sum(a[s].value() for s in sources)
 
@@ -121,23 +115,17 @@ if pulp.LpStatus[prob.status] == "Optimal":
 
     # Blended water quality actually achieved
     if total_drawn > 1e-9:
-        blended_alkalinity_value = (
-            sum(alkalinity[s] * a[s].value() for s in sources) / total_drawn
-        )
+        blended_alkalinity_value = sum(alkalinity[s] * a[s].value() for s in sources) / total_drawn
         print(
             f"\nBlended alkalinity: {blended_alkalinity_value:.1f} mg/L CaCO3 "
             f"(bounds: {alkalinity_lower:.1f}-{alkalinity_upper:.1f})"
         )
-        blended_hydrogen_conc_value = (
-            sum(pH_hydrogen_conc[s] * a[s].value() for s in sources) / total_drawn
-        )
+        blended_hydrogen_conc_value = sum(pH_hydrogen_conc[s] * a[s].value() for s in sources) / total_drawn
         print(
             f"Blended hydrogen ion concentration: {blended_hydrogen_conc_value:.2e} mol/L "
             f"(bounds: {pH_hydrogen_conc_lower:.2e}-{pH_hydrogen_conc_upper:.2e})"
         )
-        blended_turbidity_value = (
-            sum(turbidity[s] * a[s].value() for s in sources) / total_drawn
-        )
+        blended_turbidity_value = sum(turbidity[s] * a[s].value() for s in sources) / total_drawn
         print(
             f"Blended turbidity: {blended_turbidity_value:.1f} NTU "
             f"(bounds: {turbidity_lower:.1f}-{turbidity_upper:.1f})"
@@ -148,6 +136,4 @@ if pulp.LpStatus[prob.status] == "Optimal":
     for s in sources:
         if round(alpha[s].value()) == 1:
             utilisation = 100 * a[s].value() / max_withdrawal[s]
-            print(
-                f"  {s}: {a[s].value():.1f} / {max_withdrawal[s]:.1f} ML/day ({utilisation:.0f}%)"
-            )
+            print(f"  {s}: {a[s].value():.1f} / {max_withdrawal[s]:.1f} ML/day ({utilisation:.0f}%)")
