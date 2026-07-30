@@ -38,4 +38,4 @@ Site](https://pubs.acs.org/iecred/article-pdf/64/26/13221/41899072/ie4c04633.pdf
 
 - Good visualisation of treatment plant structure and process
 - Identifies filtration as first step (limestone filter as opposed to lime dosing)
-- Can we do filtration before chemical dosing? If so, how does this affect the model and the assumptions we make about the water chemistry?
+- Gave me the idea: can we do filtration before chemical dosing? If so, how does this affect the model and the assumptions we make about the water chemistry? Could we model this as a fixed percent reduction in turbidity, for example?
