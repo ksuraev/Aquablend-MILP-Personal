@@ -295,9 +295,14 @@ def print_results(
                 sum(data.quality_in_source[p][s] * b[(s, t)].value() for s in data.sources_into[t])
                 / inflow[t]
             )
+            lower, upper = data.quality_lower_bounds[p], data.quality_upper_bounds[p]
             if p == "pH":
+                # Bounds are stored inverted (as hydrogen-ion concentration), so invert them back to pH for reporting
                 blended = -math.log10(blended)
-            values.append(f"{p}={blended:.2f}")
+                lower, upper = -math.log10(upper), -math.log10(lower)
+            values.append(
+                f"{p}={blended:.2f} (safe: {lower:.2f}-{upper:.2f})"
+            )  # Append the safe range for clarity
         print(f"  {t}: {', '.join(values)}")
 
     print("\nCapacity utilisation (active sources only):")
