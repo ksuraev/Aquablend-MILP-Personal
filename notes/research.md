@@ -33,7 +33,7 @@ Site](https://pubs.acs.org/iecred/article-pdf/64/26/13221/41899072/ie4c04633.pdf
 - Gave me the idea: can we do filtration before chemical dosing? If so, how does this affect the model and the assumptions we make about the water chemistry? Could we model this as a fixed percent reduction in turbidity, for example?
 
 **Rough idea:**
-Introduce a new parameter $R_{tp} \in (0,1)$ that represents the fraction of parameter $p$ removed by filtration at plant $t$. Then, the quality constraint is modified:
+Introduce a new parameter $R_{tp} \in (0,1)$ that represents the fraction of parameter $p$ removed by filtration at plant $t$. Introduce a binary variable $\epsilon_t$ that indicates if filtration is active at a plant $t$. Then, the quality constraint is modified:
 
 $$
 \underline{Q}_{p}b_{st} \le (1 - R_{tp})Q_{p}b_{st} \le \overline{Q}_{p}b_{st}, \quad \forall t \in T, \forall p \in P
@@ -42,7 +42,7 @@ $$
 Assumptions/issues:
 
 - Assume no backwashing losses or cleaning required, assume uniform diameter size of filter media (only one type of filter at a plant), assume no clogging of filter media [Effectiveness of sand media filters for removing turbidity](https://www.sciencedirect.com/science/article/pii/S0378377412001187)
-- Assume filter removes a fixed percentage of turbidity (or other applicable parameters). [Effectiveness of sand media filters for removing turbidity](https://www.sciencedirect.com/science/article/pii/S0378377412001187) describe a range.
+- Assume filter removes a fixed percentage of turbidity (or other applicable parameters).
 - Assume no cost associated with using filter (fixed activation cost?, variable cost per unit of water filtered?).
 
 ---
