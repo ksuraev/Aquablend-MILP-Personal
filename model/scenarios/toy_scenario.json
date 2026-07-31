@@ -1,0 +1,64 @@
+{
+  "scenario_name": "Toy model — single plant, single zone",
+  "description": "Based off some open PRs and work done by team. Values are representative and not based on any real data.",
+  "sources": [
+    {
+      "id": "silvan_reservoir",
+      "fixed_cost": 100.0,
+      "unit_cost": 120.0,
+      "min_flow": 0,
+      "max_flow": 350,
+      "ph": 7.1,
+      "alkalinity": 28,
+      "turbidity": 1.5
+    },
+    {
+      "id": "yarra_kew",
+      "fixed_cost": 150.0,
+      "unit_cost": 95.0,
+      "min_flow": 0,
+      "max_flow": 300,
+      "ph": 7.4,
+      "alkalinity": 35,
+      "turbidity": 4.2
+    },
+    {
+      "id": "groundwater_bore_1",
+      "fixed_cost": 500.0,
+      "unit_cost": 210.0,
+      "min_flow": 0,
+      "max_flow": 60,
+      "ph": 7.8,
+      "alkalinity": 68,
+      "turbidity": 0.6
+    }
+  ],
+  "plants": [
+    {
+      "id": "facility_1",
+      "fixed_cost": 0.0,
+      "unit_cost": 64.0,
+      "min_flow": 0,
+      "max_flow": 600
+    }
+  ],
+  "zones": [
+    {
+      "id": "zone_1",
+      "demand": 500
+    }
+  ],
+  "source_plant_links": [
+    { "source": "silvan_reservoir", "plant": "facility_1", "max_flow": 350 },
+    { "source": "yarra_kew", "plant": "facility_1", "max_flow": 300 },
+    { "source": "groundwater_bore_1", "plant": "facility_1", "max_flow": 60 }
+  ],
+  "plant_zone_links": [
+    { "plant": "facility_1", "zone": "zone_1", "max_flow": 600 }
+  ],
+  "quality_limits": {
+    "pH": { "min": 6.5, "max": 8.5 },
+    "alkalinity": { "min": 20, "max": 100 },
+    "turbidity": { "min": 0, "max": 5.0 }
+  }
+}
