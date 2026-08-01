@@ -1,3 +1,4 @@
+% Copied from team repo on 01/08/26
 \documentclass[10pt]{article}
 \usepackage[a4paper,margin=2.5cm]{geometry}
 \usepackage{amsmath,amssymb}
@@ -20,17 +21,24 @@
 \maketitle
 
 \section{Overview}
-This document presents the mathematical formulation of the Aquablend model: a single period Mixed-Integer Linear Program (MILP) that chooses which water sources and treatment plants to operate, how much to draw from each source, and how to route water through the
-source~$\to$~plant~$\to$~zone network, so that demand and water quality limits are met at
-least cost. It sets out the notation (sets, parameters, and decision variables), the
-objective, and the full set of constraints, then shows how the Sprint~1 toy model arises as the single plant, single zone case of the same formulation.
+
+Water corporations draw drinking water from multiple sources, such as reservoirs, river intakes, and groundwater bores, that differ in cost and in raw water quality (pH, alkalinity, turbidity, and so on). Before that water can be supplied for human consumption, it is treated at a plant and delivered to demand zones. The question this model answers is: which sources should be drawn from, how much from each, and how should that water be routed to plants and zones, so that demand is met, and water quality stays within safe limits, at the lowest possible cost?
+
+This is formulated as a Mixed-Integer Linear Program (MILP). Whether a source, plant, or transfer link is used at all is a binary decision; how much water is drawn or flows along each link is a continuous decision. The objective balances fixed activation costs against the variable cost of drawing and treating water.
+
+Treatment cost here is a flat rate per megalitre (ML) processed, and water quality only enters as a feasibility requirement: a blend must stay within limits, but blending sources more favourably does not itself lower the treatment cost.
+Modelling that difference, where a better blend reduces treatment cost, is a future enhancement.
+
+The toy case works with the simplest version of this problem: one treatment plant and one demand zone, fed by several candidate sources. With only one plant and one zone there is no routing choice to make: every source that's switched on sends its full draw to the plant, and the plant sends everything on to the zone. As a result, the model reduces to deciding which sources to activate and how much to draw from each. Section~\ref{sec:toy} below derives this toy case as a special case of the general network formulation, so the same model scales up to multiple plants and zones later without being rebuilt
+from scratch.
+
+
+\section{Notation}
 
 \paragraph{Convention.} This is a single period model (one representative day),
 so no day index is used. Parameters are uppercase;
 decision variables are lowercase, using Greek letters for binary decisions and lowercase Latin for continuous volumes. A subscript is an index; an overbar/underbar is an upper/lower bound.
 
-
-\section{Notation}
 \subsection{Sets}
 \begin{center}
     \begin{tabular}{@{}ll@{}}
@@ -376,7 +384,7 @@ linearity in the Sprint~1 MILP. The key assumptions are:
 These assumptions allow the water quality constraints to remain linear and
 suitable for inclusion in the MILP formulation.
 
-\section{Application to the toy model}
+\section{Application to the toy model}\label{sec:toy}
 This network model is a generalisation of the Sprint~1 toy model, not a different problem: the toy is
 the special case with a \emph{single} treatment plant and a \emph{single} demand zone. With
 one plant and one zone there is nothing to route: every activated source sends its whole
