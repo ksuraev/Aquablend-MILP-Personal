@@ -48,6 +48,12 @@
 - Winneke and Tarago (open catchments) - full treatment process listed (which can we model? filtration?)
 - Protected catchments - "three smaller membrane filtration plants", "six UV disinfection plants", "chlorination plants located at all major water treatment plants".
 
+[Annual quality report](https://www.melbournewater.com.au/about/what-we-do/publications/water-quality-annual-report)
+
+- Very useful info on water quality and treatment processes including plant locations/operations
+- Could single out a single plant/process that is "simpler" to model (some processes I want to look at 'Iron / manganese removal', 'Fluoride dosing', 'Chlorination', 'UV disinfection', 'Membrane filtration')
+- Also tells us where water is stored (treatment storages/service reservoirs)
+
 ---
 
 [A Mixed-Integer Programming Approach to Optimal Operations of
