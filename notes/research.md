@@ -106,7 +106,7 @@ $$
 Add a dosing cost to the objective function:
 
 $$
- + \sum_{t \in T} \sum_{k \in K} C_{tk} m_{tk}
+\sum_{t \in T} \sum_{k \in K} C_{tk} m_{tk}
 $$
 
 I think this would only work on things that are purely additive e.g. fluoride. If so the water quality constraint has to be modified to account for the additive:
