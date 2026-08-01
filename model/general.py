@@ -49,7 +49,9 @@ class NetworkData:
     plants_into: dict = field(init=False)
 
     def __post_init__(self):
-        self.sources_into = {t: [s for s, tt in self.st_arcs if tt == t] for t in self.T}
+        self.sources_into = {
+            t: [s for s, tt in self.st_arcs if tt == t] for t in self.T
+        }
         self.zones_from = {t: [z for tt, z in self.tz_arcs if tt == t] for t in self.T}
         self.plants_into = {z: [t for t, zz in self.tz_arcs if zz == z] for z in self.Z}
 
@@ -89,10 +91,16 @@ def load_network_data(path: str) -> NetworkData:
     plant_unit_cost = {p["id"]: p["unit_cost"] for p in plants}
 
     # Arc parameters
-    max_flow_st = {(link["source"], link["plant"]): link["max_flow"] for link in st_links}
-    min_flow_st = {(link["source"], link["plant"]): link.get("min_flow", 0.0) for link in st_links}
+    max_flow_st = {
+        (link["source"], link["plant"]): link["max_flow"] for link in st_links
+    }
+    min_flow_st = {
+        (link["source"], link["plant"]): link.get("min_flow", 0.0) for link in st_links
+    }
     max_flow_tz = {(link["plant"], link["zone"]): link["max_flow"] for link in tz_links}
-    min_flow_tz = {(link["plant"], link["zone"]): link.get("min_flow", 0.0) for link in tz_links}
+    min_flow_tz = {
+        (link["plant"], link["zone"]): link.get("min_flow", 0.0) for link in tz_links
+    }
 
     # Source quality values and their bounds, both keyed by the parameter names in quality_limits
     quality_in_source = {}
@@ -113,7 +121,9 @@ def load_network_data(path: str) -> NetworkData:
             quality_in_source[p] = {s["id"]: 10 ** -s["quality"][p] for s in sources}
             quality_lower_bounds[p], quality_upper_bounds[p] = 10**-upper, 10**-lower
         else:
-            raise ValueError(f"Unknown transform {transform!r} for quality parameter {p!r}.")
+            raise ValueError(
+                f"Unknown transform {transform!r} for quality parameter {p!r}."
+            )
 
     # Demand per zone
     demand = {z["id"]: z["demand"] for z in zones}
@@ -153,9 +163,13 @@ def build_model(data: NetworkData) -> tuple[pulp.LpProblem, dict]:
     alpha = {s: pulp.LpVariable(f"alpha_{s}", cat="Binary") for s in data.S}
     a = {s: pulp.LpVariable(f"a_{s}", lowBound=0) for s in data.S}
     beta = {t: pulp.LpVariable(f"beta_{t}", cat="Binary") for t in data.T}
-    gamma = {(s, t): pulp.LpVariable(f"gamma_{s}_{t}", cat="Binary") for s, t in data.st_arcs}
+    gamma = {
+        (s, t): pulp.LpVariable(f"gamma_{s}_{t}", cat="Binary") for s, t in data.st_arcs
+    }
     b = {(s, t): pulp.LpVariable(f"b_{s}_{t}", lowBound=0) for s, t in data.st_arcs}
-    delta = {(t, z): pulp.LpVariable(f"delta_{t}_{z}", cat="Binary") for t, z in data.tz_arcs}
+    delta = {
+        (t, z): pulp.LpVariable(f"delta_{t}_{z}", cat="Binary") for t, z in data.tz_arcs
+    }
     c = {(t, z): pulp.LpVariable(f"c_{t}_{z}", lowBound=0) for t, z in data.tz_arcs}
 
     # Objective: '4 Objective' in formulation.pdf
@@ -164,7 +178,8 @@ def build_model(data: NetworkData) -> tuple[pulp.LpProblem, dict]:
         + pulp.lpSum(data.plant_activation_cost[t] * beta[t] for t in data.T)
         + pulp.lpSum(data.source_unit_cost[s] * a[s] for s in data.S)
         + pulp.lpSum(
-            data.plant_unit_cost[t] * pulp.lpSum(b[(s, t)] for s in data.sources_into[t])
+            data.plant_unit_cost[t]
+            * pulp.lpSum(b[(s, t)] for s in data.sources_into[t])
             for t in data.T
         )
     )
@@ -178,14 +193,26 @@ def build_model(data: NetworkData) -> tuple[pulp.LpProblem, dict]:
 
     # Source capacity and activation: eq (4)
     for s in data.S:
-        problem += a[s] <= data.max_source_withdrawal[s] * alpha[s], f"source_capacity_upper_{s}"
-        problem += a[s] >= data.min_source_withdrawal[s] * alpha[s], f"source_capacity_lower_{s}"
+        problem += (
+            a[s] <= data.max_source_withdrawal[s] * alpha[s],
+            f"source_capacity_upper_{s}",
+        )
+        problem += (
+            a[s] >= data.min_source_withdrawal[s] * alpha[s],
+            f"source_capacity_lower_{s}",
+        )
 
     # Plant capacity and activation: eq (5)
     for t in data.T:
         inflow = pulp.lpSum(b[(s, t)] for s in data.sources_into[t])
-        problem += inflow >= data.min_plant_throughput[t] * beta[t], f"min_plant_throughput_{t}"
-        problem += inflow <= data.max_plant_throughput[t] * beta[t], f"max_plant_throughput_{t}"
+        problem += (
+            inflow >= data.min_plant_throughput[t] * beta[t],
+            f"min_plant_throughput_{t}",
+        )
+        problem += (
+            inflow <= data.max_plant_throughput[t] * beta[t],
+            f"max_plant_throughput_{t}",
+        )
 
     # Plant flow conservation: eq (6)
     for t in data.T:
@@ -204,11 +231,23 @@ def build_model(data: NetworkData) -> tuple[pulp.LpProblem, dict]:
 
     # Source-to-plant and plant-to-zone flow bounds: eqs (8) and (9)
     for s, t in data.st_arcs:
-        problem += b[(s, t)] <= data.max_flow_st[(s, t)] * gamma[(s, t)], f"max_flow_st_{s}_{t}"
-        problem += b[(s, t)] >= data.min_flow_st[(s, t)] * gamma[(s, t)], f"min_flow_st_{s}_{t}"
+        problem += (
+            b[(s, t)] <= data.max_flow_st[(s, t)] * gamma[(s, t)],
+            f"max_flow_st_{s}_{t}",
+        )
+        problem += (
+            b[(s, t)] >= data.min_flow_st[(s, t)] * gamma[(s, t)],
+            f"min_flow_st_{s}_{t}",
+        )
     for t, z in data.tz_arcs:
-        problem += c[(t, z)] <= data.max_flow_tz[(t, z)] * delta[(t, z)], f"max_flow_tz_{t}_{z}"
-        problem += c[(t, z)] >= data.min_flow_tz[(t, z)] * delta[(t, z)], f"min_flow_tz_{t}_{z}"
+        problem += (
+            c[(t, z)] <= data.max_flow_tz[(t, z)] * delta[(t, z)],
+            f"max_flow_tz_{t}_{z}",
+        )
+        problem += (
+            c[(t, z)] >= data.min_flow_tz[(t, z)] * delta[(t, z)],
+            f"min_flow_tz_{t}_{z}",
+        )
 
     # Links require an active upstream node: eqs (10) and (11)
     for s, t in data.st_arcs:
@@ -223,8 +262,14 @@ def build_model(data: NetworkData) -> tuple[pulp.LpProblem, dict]:
             loaded = pulp.lpSum(
                 data.quality_in_source[p][s] * b[(s, t)] for s in data.sources_into[t]
             )
-            problem += loaded >= data.quality_lower_bounds[p] * inflow, f"{p}_quality_lower_{t}"
-            problem += loaded <= data.quality_upper_bounds[p] * inflow, f"{p}_quality_upper_{t}"
+            problem += (
+                loaded >= data.quality_lower_bounds[p] * inflow,
+                f"{p}_quality_lower_{t}",
+            )
+            problem += (
+                loaded <= data.quality_upper_bounds[p] * inflow,
+                f"{p}_quality_upper_{t}",
+            )
 
     variables = {
         "alpha": alpha,
@@ -312,7 +357,10 @@ def print_results(
         values = []
         for p in data.P:
             blended = (
-                sum(data.quality_in_source[p][s] * b[(s, t)].value() for s in data.sources_into[t])
+                sum(
+                    data.quality_in_source[p][s] * b[(s, t)].value()
+                    for s in data.sources_into[t]
+                )
                 / inflow[t]
             )
             lower, upper = data.quality_lower_bounds[p], data.quality_upper_bounds[p]
