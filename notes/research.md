@@ -89,6 +89,7 @@ Assumptions/issues:
 
 **Testing out chemical dosing:**
 
+Suppose $\mathcal{K}$ is the set of chemicals that can be dosed.
 Introduce continuous variable that represents the mass of chemical $k$ dosed at plant $t$ per day, $m_{tk}$. Then, $\epsilon_{tk}$ is a binary variable that indicates if chemical $k$ is dosed at plant $t$.
 
 New parameters:
@@ -100,19 +101,22 @@ New parameters:
 Dosing capacity and activation (mirrors plant/source capacity and activation constraints):
 
 $$
-\underline{M}_{tk}\epsilon_{tk} \le m_{tk} \le \overline{M}_{tk}\epsilon_{tk}, \quad \forall t \in T, \forall k \in K
+\underline{M}_{tk}\epsilon_{tk} \le m_{tk} \le \overline{M}_{tk}\epsilon_{tk}, \quad \forall t \in \mathcal{T}, \forall k \in \mathcal{K}
 $$
 
 Add a dosing cost to the objective function:
 
 $$
-\sum_{t \in T} \sum_{k \in K} C_{tk} m_{tk}
+\sum_{t \in \mathcal{T}} \sum_{k \in \mathcal{K}} C_{tk} m_{tk}
 $$
 
 I think this would only work on things that are purely additive e.g. fluoride. If so the water quality constraint has to be modified to account for the additive:
 
 $$
-\underline{Q}_{p}b_{st} \le Q_{p}b_{st} + \sum_{k \in K} E_{pk} m_{tk} \le \overline{Q}_{p}b_{st}, \quad \forall t \in T, \forall p \in P
+    \underline{Q}_p \sum_{s \in \mathcal{S}} b_{st}
+    \le \sum_{s \in \mathcal{S}} Q_{sp} b_{st} + \sum_{k \in \mathcal{K}} E_{pk} m_{tk}
+    \le \overline{Q}_p \sum_{s \in \mathcal{S}} b_{st},
+    \quad \forall t \in \mathcal{T},\ \forall p \in \mathcal{P}.
 $$
 
 Assuming:
