@@ -1,6 +1,6 @@
 # Notes/research
 
-### Australian Water Drinking Guidelines
+## Australian Water Drinking Guidelines
 
 [Australian Water Drinking Guidelines - Calcium Hydroxide (Ca(OH)2)](https://guidelines.nhmrc.gov.au/australian-drinking-water-guidelines/part-5/treatment-chemicals/calcium-hydroxide)
 
@@ -21,6 +21,32 @@
 - Chlorine-based disinfection - does not address all pathogens - "efficiency is impaired above pH 8.0"
 - Reduction (particle removal) through filtration
 - "consequently the target for the turbidity of water leaving individual filters should be less than 0.2 NTU, and should not exceed 0.5 NTU at any time."
+
+---
+
+## Melbourne Water
+
+[Desalination plant](https://www.melbournewater.com.au/water-and-environment/water-management/water-quality/water-treatment/desalination)
+
+- Highlighting process of desalination and water treatment, including filtration, transport and dosing with minerals
+
+[Transfer arcs](https://www.melbournewater.com.au/media/23211)
+
+- Transfer arcs between Melbourne water reservoirs
+- Important note "Tarago, on the other hand, is not connected to another reservoir. Water is treated at its onsite treatment plant and then supplied to the Mornington Peninsula. Water from the Desalination Plant enters our supply system at Cardinia Reservoir, where it mixes with water from our catchments supplied from Silvan."
+
+[Water supply system](https://www.melbournewater.com.au/water-and-environment/water-management/water-quality/our-water-supply-system)
+
+- 10 water storage reservoirs
+- 40 service reservoirs (what is this?)
+- 13 water treatment plants (want to know how these operate)
+- "approximately 1,100 km of aqueducts and underground water mains, delivering water to the retail water companies"
+- "water storage reservoirs help improve water quality"
+
+[Water treatment](https://www.melbournewater.com.au/water-and-environment/water-management/water-quality/water-treatment)
+
+- Winneke and Tarago (open catchments) - full treatment process listed (which can we model? filtration?)
+- Protected catchments - "three smaller membrane filtration plants", "six UV disinfection plants", "chlorination plants located at all major water treatment plants".
 
 ---
 
@@ -47,7 +73,7 @@ Assumptions/issues:
 
 ---
 
-### Nonlinearities in water treatment
+## Nonlinearities in water treatment
 
 [Linearizing feedforward–feedback control of pH processes based on the Wiener model](https://www.sciencedirect.com/science/article/pii/S0959152404000484)
 
@@ -56,7 +82,7 @@ Assumptions/issues:
 
 [Nonlinear Model Predictive Control of a
 coagulation chemical dosing unit for water
-treatment plants ](https://www.sciencedirect.com/science/article/pii/S1474667016416423)
+treatment plants](https://www.sciencedirect.com/science/article/pii/S1474667016416423)
 
 - coagulation in water treatment plants - coagulation frequently comes up
 - chemistry is very complex and nonlinear
@@ -66,3 +92,5 @@ treatment plants ](https://www.sciencedirect.com/science/article/pii/S1474667016
 - pH neutralisation process - "difficult control problem"
 - Probably a rather ambitious choice as an initial parameter
 - Not sure if this applies to the problem but some good insights here
+
+---
