@@ -49,9 +49,7 @@ class NetworkData:
     plants_into: dict = field(init=False)
 
     def __post_init__(self):
-        self.sources_into = {
-            t: [s for s, tt in self.st_arcs if tt == t] for t in self.T
-        }
+        self.sources_into = {t: [s for s, tt in self.st_arcs if tt == t] for t in self.T}
         self.zones_from = {t: [z for tt, z in self.tz_arcs if tt == t] for t in self.T}
         self.plants_into = {z: [t for t, zz in self.tz_arcs if zz == z] for z in self.Z}
 
@@ -91,16 +89,10 @@ def load_network_data(path: str) -> NetworkData:
     plant_unit_cost = {p["id"]: p["unit_cost"] for p in plants}
 
     # Arc parameters
-    max_flow_st = {
-        (link["source"], link["plant"]): link["max_flow"] for link in st_links
-    }
-    min_flow_st = {
-        (link["source"], link["plant"]): link.get("min_flow", 0.0) for link in st_links
-    }
+    max_flow_st = {(link["source"], link["plant"]): link["max_flow"] for link in st_links}
+    min_flow_st = {(link["source"], link["plant"]): link.get("min_flow", 0.0) for link in st_links}
     max_flow_tz = {(link["plant"], link["zone"]): link["max_flow"] for link in tz_links}
-    min_flow_tz = {
-        (link["plant"], link["zone"]): link.get("min_flow", 0.0) for link in tz_links
-    }
+    min_flow_tz = {(link["plant"], link["zone"]): link.get("min_flow", 0.0) for link in tz_links}
 
     # Source quality values and their bounds, both keyed by the parameter names in quality_limits
     quality_in_source = {}
@@ -117,13 +109,11 @@ def load_network_data(path: str) -> NetworkData:
             quality_in_source[p] = {s["id"]: s["quality"][p] for s in sources}
             quality_lower_bounds[p], quality_upper_bounds[p] = lower, upper
         elif transform == "hydrogen_ion":
-            # pH is logarithmic and doesn't blend linearly by volume, so stored as hydrogen-ion concentration. The bounds swap because the transform is order-reversing: higher pH means lower [H+].
+            # pH is logarithmic and doesn't blend linearly by volume, so stored as hydrogen-ion concentration - the bounds swap: higher pH means lower [H+].
             quality_in_source[p] = {s["id"]: 10 ** -s["quality"][p] for s in sources}
             quality_lower_bounds[p], quality_upper_bounds[p] = 10**-upper, 10**-lower
         else:
-            raise ValueError(
-                f"Unknown transform {transform!r} for quality parameter {p!r}."
-            )
+            raise ValueError(f"Unknown transform {transform!r} for quality parameter {p!r}.")
 
     # Demand per zone
     demand = {z["id"]: z["demand"] for z in zones}
@@ -163,13 +153,9 @@ def build_model(data: NetworkData) -> tuple[pulp.LpProblem, dict]:
     alpha = {s: pulp.LpVariable(f"alpha_{s}", cat="Binary") for s in data.S}
     a = {s: pulp.LpVariable(f"a_{s}", lowBound=0) for s in data.S}
     beta = {t: pulp.LpVariable(f"beta_{t}", cat="Binary") for t in data.T}
-    gamma = {
-        (s, t): pulp.LpVariable(f"gamma_{s}_{t}", cat="Binary") for s, t in data.st_arcs
-    }
+    gamma = {(s, t): pulp.LpVariable(f"gamma_{s}_{t}", cat="Binary") for s, t in data.st_arcs}
     b = {(s, t): pulp.LpVariable(f"b_{s}_{t}", lowBound=0) for s, t in data.st_arcs}
-    delta = {
-        (t, z): pulp.LpVariable(f"delta_{t}_{z}", cat="Binary") for t, z in data.tz_arcs
-    }
+    delta = {(t, z): pulp.LpVariable(f"delta_{t}_{z}", cat="Binary") for t, z in data.tz_arcs}
     c = {(t, z): pulp.LpVariable(f"c_{t}_{z}", lowBound=0) for t, z in data.tz_arcs}
 
     # Objective: '4 Objective' in formulation.pdf
@@ -178,8 +164,7 @@ def build_model(data: NetworkData) -> tuple[pulp.LpProblem, dict]:
         + pulp.lpSum(data.plant_activation_cost[t] * beta[t] for t in data.T)
         + pulp.lpSum(data.source_unit_cost[s] * a[s] for s in data.S)
         + pulp.lpSum(
-            data.plant_unit_cost[t]
-            * pulp.lpSum(b[(s, t)] for s in data.sources_into[t])
+            data.plant_unit_cost[t] * pulp.lpSum(b[(s, t)] for s in data.sources_into[t])
             for t in data.T
         )
     )
@@ -326,8 +311,7 @@ def print_results(
     # Print flow volumes along arcs
     print("\nFlows:")
     for (node_from, node_to), var in {**b, **c}.items():
-        if var.value() > 1e-6:
-            print(f"  {node_from} -> {node_to}: {var.value():.1f} ML/day")
+        print(f"\t{node_from} -> {node_to}: {var.value():.1f} ML/day")
 
     # Cost breakdown: same three terms as the objective, computed separately to see which one is driving the cost
     print("\nCost breakdown:")
@@ -337,15 +321,15 @@ def print_results(
     drawing_cost = sum(data.source_unit_cost[s] * a[s].value() for s in data.S)
     treatment_cost = sum(data.plant_unit_cost[t] * inflow[t] for t in data.T)
 
-    print(f"  Activation: ${activation_cost:,.2f}")
-    print(f"  Drawing:    ${drawing_cost:,.2f}")
-    print(f"  Treatment:  ${treatment_cost:,.2f}")
+    print(f"\tActivation: ${activation_cost:,.2f}")
+    print(f"\tDrawing:    ${drawing_cost:,.2f}")
+    print(f"\tTreatment:  ${treatment_cost:,.2f}")
 
     # Print demand satisfaction and slack
     print("\nDemand:")
     for z in data.Z:
         print(
-            f"  {z}: {data.demand[z]:.1f} required, {delivered[z]:.1f} delivered "
+            f"\t{z}: {data.demand[z]:.1f} required, {delivered[z]:.1f} delivered "
             f"({delivered[z] - data.demand[z]:+.1f} slack)"
         )
 
@@ -357,10 +341,7 @@ def print_results(
         values = []
         for p in data.P:
             blended = (
-                sum(
-                    data.quality_in_source[p][s] * b[(s, t)].value()
-                    for s in data.sources_into[t]
-                )
+                sum(data.quality_in_source[p][s] * b[(s, t)].value() for s in data.sources_into[t])
                 / inflow[t]
             )
             lower, upper = data.quality_lower_bounds[p], data.quality_upper_bounds[p]
@@ -371,7 +352,7 @@ def print_results(
             values.append(
                 f"{p}={blended:.2f} (safe: {lower:.2f}-{upper:.2f})"
             )  # Append the safe range of each parameter for clarity
-        print(f"  {t}: {', '.join(values)}")
+        print(f"\t{t}: {', '.join(values)}")
 
     # Compute and print capacity utilisation of each active source
     print("\nCapacity utilisation (active sources only):")
@@ -379,7 +360,7 @@ def print_results(
         if a[s].value() > 1e-6:
             utilisation = 100 * a[s].value() / data.max_source_withdrawal[s]
             drawn, capacity = a[s].value(), data.max_source_withdrawal[s]
-            print(f"  {s}: {drawn:.1f} / {capacity:.1f} ML/day ({utilisation:.0f}%)")
+            print(f"\t{s}: {drawn:.1f} / {capacity:.1f} ML/day ({utilisation:.0f}%)")
 
 
 def main() -> None:
