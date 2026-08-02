@@ -4,7 +4,7 @@
   "sources": [
     {
       "id": "silvan_reservoir",
-      "fixed_cost": 0,
+      "fixed_cost": 7000,
       "unit_cost": 120,
       "min_flow": 0,
       "max_flow": 350,
@@ -16,7 +16,7 @@
     },
     {
       "id": "yarra_kew",
-      "fixed_cost": 0,
+      "fixed_cost": 5000,
       "unit_cost": 95,
       "min_flow": 0,
       "max_flow": 300,
@@ -28,7 +28,7 @@
     },
     {
       "id": "cardinia_reservoir",
-      "fixed_cost": 0,
+      "fixed_cost": 1500,
       "unit_cost": 105,
       "min_flow": 0,
       "max_flow": 250,
