@@ -16,8 +16,8 @@ import pulp
 
 
 @dataclass
-class NetworkData:
-    """Data class to hold the network model data."""
+class Data:
+    """Data class to hold the model data."""
 
     S: list
     T: list
@@ -54,8 +54,8 @@ class NetworkData:
         self.plants_into = {z: [t for t, zz in self.tz_arcs if zz == z] for z in self.Z}
 
 
-def load_network_data(path: str) -> NetworkData:
-    """Build a NetworkData instance from a scenario JSON file (see toy_scenario.json)."""
+def load_data(path: str) -> Data:
+    """Build a Data instance from a scenario JSON file (see toy_scenario.json)."""
     with open(path, "r", encoding="utf-8") as handle:
         scenario: dict[str, Any] = json.load(handle)
 
@@ -68,7 +68,7 @@ def load_network_data(path: str) -> NetworkData:
 
     # Sets
     S = [s["id"] for s in sources]
-    T = [p["id"] for p in plants]
+    T = [t["id"] for t in plants]
     Z = [z["id"] for z in zones]
     P = list(quality_limits.keys())
 
@@ -83,18 +83,18 @@ def load_network_data(path: str) -> NetworkData:
     source_unit_cost = {s["id"]: s["unit_cost"] for s in sources}
 
     # Plant parameters
-    min_plant_throughput = {p["id"]: p.get("min_flow", 0.0) for p in plants}
-    max_plant_throughput = {p["id"]: p["max_flow"] for p in plants}
-    plant_activation_cost = {p["id"]: p.get("fixed_cost", 0.0) for p in plants}
-    plant_unit_cost = {p["id"]: p["unit_cost"] for p in plants}
+    min_plant_throughput = {t["id"]: t.get("min_flow", 0.0) for t in plants}
+    max_plant_throughput = {t["id"]: t["max_flow"] for t in plants}
+    plant_activation_cost = {t["id"]: t.get("fixed_cost", 0.0) for t in plants}
+    plant_unit_cost = {t["id"]: t["unit_cost"] for t in plants}
 
-    # Arc parameters
+    # Arc/link parameters
     max_flow_st = {(link["source"], link["plant"]): link["max_flow"] for link in st_links}
     min_flow_st = {(link["source"], link["plant"]): link.get("min_flow", 0.0) for link in st_links}
     max_flow_tz = {(link["plant"], link["zone"]): link["max_flow"] for link in tz_links}
     min_flow_tz = {(link["plant"], link["zone"]): link.get("min_flow", 0.0) for link in tz_links}
 
-    # Source quality values and their bounds, both keyed by the parameter names in quality_limits
+    # Source quality values and their bounds: keyed by the parameter names in quality_limits
     quality_in_source = {}
     quality_lower_bounds = {}
     quality_upper_bounds = {}
@@ -118,7 +118,7 @@ def load_network_data(path: str) -> NetworkData:
     # Demand per zone
     demand = {z["id"]: z["demand"] for z in zones}
 
-    return NetworkData(
+    return Data(
         S=S,
         T=T,
         Z=Z,
@@ -145,8 +145,8 @@ def load_network_data(path: str) -> NetworkData:
     )
 
 
-def build_model(data: NetworkData) -> tuple[pulp.LpProblem, dict]:
-    """Create decision variables, objective, and constraints. Returns the problem plus a dict of the variable dicts."""
+def build_model(data: Data) -> tuple[pulp.LpProblem, dict]:
+    """Create decision variables, objective, and constraints. Returns the problem plus a dictionary of decision variables"""
     problem = pulp.LpProblem("AquaBlend_Toy", pulp.LpMinimize)
 
     # Maps directly to '2.3 Decision Variables' in formulation.pdf
@@ -272,13 +272,11 @@ def solve(problem: pulp.LpProblem) -> tuple[str, float | None]:
     """Solve the problem and return the status and total cost (if optimal)."""
     problem.solve(pulp.HiGHS(msg=False))
     status = pulp.LpStatus[problem.status]
-    total_cost = pulp.value(problem.objective) if status == "Optimal" else None
+    total_cost = pulp.value(problem.objective) if status == pulp.LpStatusOptimal else None
     return status, total_cost
 
 
-def print_results(
-    data: NetworkData, variables: dict, status: str, total_cost: float | None
-) -> None:
+def print_results(data: Data, variables: dict, status: str, total_cost: float | None) -> None:
     """Print the results of the optimisation purely for interpretation. Future: return output JSON instead (or in addition to)."""
     alpha, a, beta, b, c = (
         variables["alpha"],
@@ -309,9 +307,14 @@ def print_results(
     delivered = {z: sum(c[(t, z)].value() for t in data.plants_into[z]) for z in data.Z}
 
     # Print flow volumes along arcs
+    # Print flow volumes along arcs
     print("\nFlows:")
-    for (node_from, node_to), var in {**b, **c}.items():
-        print(f"\t{node_from} -> {node_to}: {var.value():.1f} ML/day")
+    for node_from, node_to in b:
+        if b[(node_from, node_to)].value() > 1e-6:
+            print(f"  {node_from} -> {node_to}: {b[(node_from, node_to)].value():.1f} ML/day")
+    for node_from, node_to in c:
+        if c[(node_from, node_to)].value() > 1e-6:
+            print(f"  {node_from} -> {node_to}: {c[(node_from, node_to)].value():.1f} ML/day")
 
     # Cost breakdown: same three terms as the objective, computed separately to see which one is driving the cost
     print("\nCost breakdown:")
@@ -346,26 +349,25 @@ def print_results(
             )
             lower, upper = data.quality_lower_bounds[p], data.quality_upper_bounds[p]
             if p == "pH":
-                # Bounds are stored inverted (as hydrogen-ion concentration), so invert them back to pH for reporting
+                # Bounds are stored inverted (as hydrogen-ion concentration), so invert them back to pH for printing
                 blended = -math.log10(blended)
                 lower, upper = -math.log10(upper), -math.log10(lower)
             values.append(
                 f"{p}={blended:.2f} (safe: {lower:.2f}-{upper:.2f})"
-            )  # Append the safe range of each parameter for clarity
+            )  # Append the safe range of each parameter
         print(f"\t{t}: {', '.join(values)}")
 
     # Compute and print capacity utilisation of each active source
     print("\nCapacity utilisation (active sources only):")
     for s in data.S:
-        if a[s].value() > 1e-6:
-            utilisation = 100 * a[s].value() / data.max_source_withdrawal[s]
-            drawn, capacity = a[s].value(), data.max_source_withdrawal[s]
-            print(f"\t{s}: {drawn:.1f} / {capacity:.1f} ML/day ({utilisation:.0f}%)")
+        utilisation = 100 * a[s].value() / data.max_source_withdrawal[s]
+        drawn, capacity = a[s].value(), data.max_source_withdrawal[s]
+        print(f"\t{s}: {drawn:.1f} / {capacity:.1f} ML/day ({utilisation:.0f}%)")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Build and solve an AquaBlend network MILP from a scenario file."
+        description="Build and solve from scenario JSON file",
     )
     parser.add_argument(
         "scenario",
@@ -375,7 +377,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    data = load_network_data(args.scenario)
+    data = load_data(args.scenario)
     problem, variables = build_model(data)
     status, total_cost = solve(problem)
     print_results(data, variables, status, total_cost)
