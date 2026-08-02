@@ -95,8 +95,9 @@ Introduce continuous variable that represents the mass of chemical $k$ dosed at 
 New parameters:
 
 - Minimum and maximum dosing rates for each chemical $k$ at each plant $t$, $\underline{M}_{tk}$ and $\overline{M}_{tk}$ (maybe kg/day)
-- Unit cost of chemical $k$ at plant $t$, $C_{tk}$ ($/day)
-- Amount of parameter $p$ added per unit mass of chemical $k$ dosed regardless of what is in the water $E_{pk}$ (not sure of units yet, maybe units of $p$ or kg of $p$ produced per kg of $k$ dosed)
+- Fixed cost of dosing chemical $k$ at plant $t$, $F_{tk}$ ($/day) (e.g. cost of running dosing pumps, etc.)
+- Unit cost of chemical $k$ at plant $t$, $C_{tk}$ ($/kg)
+- Amount of parameter $p$ added per unit mass of chemical $k$ dosed regardless of what is in the water $E_{pk}$ (I think kg of $p$ produced per kg of $k$ dosed)
 
 Dosing capacity and activation (mirrors plant/source capacity and activation constraints):
 
@@ -104,10 +105,16 @@ $$
 \underline{M}_{tk}\epsilon_{tk} \le m_{tk} \le \overline{M}_{tk}\epsilon_{tk}, \quad \forall t \in \mathcal{T}, \forall k \in \mathcal{K}
 $$
 
-Add a dosing cost to the objective function:
+Restrict dosing at inactive plant (I think this is redundant - check properly against formulation doc):
 
 $$
-\sum_{t \in \mathcal{T}} \sum_{k \in \mathcal{K}} C_{tk} m_{tk}
+\epsilon_{tk} \le \beta_t, \quad \forall t \in \mathcal{T}, \forall k \in \mathcal{K}
+$$
+
+Add dosing costs to the objective function:
+
+$$
+\sum_{t \in \mathcal{T}} \sum_{k \in \mathcal{K}}F_{tk}\, \epsilon_{tk} + \sum_{t \in \mathcal{T}} \sum_{k \in \mathcal{K}}C_{tk}\, m_{tk}
 $$
 
 I think this would only work on things that are purely additive e.g. fluoride. If so the water quality constraint has to be modified to account for the additive:
@@ -119,9 +126,22 @@ $$
     \quad \forall t \in \mathcal{T},\ \forall p \in \mathcal{P}.
 $$
 
+As written in the formulation doc, $b_{st}$ is the water flow from source $s$ to plant $t$. The flow conservation constraint ensures $b_{st}=c{tz}$ but technically, dosing occurs after the water has been treated and is leaving the plant, so I think the water quality constraint has to be written on the outflow:
+
+$$
+   \underline{Q}_p \sum_{z \in \mathcal{Z}} c_{tz}
+    \le
+    \sum_{s \in \mathcal{S}} Q_{sp}\,b_{st}
+    + \sum_{k \in \mathcal{K}} E_{pk}\,m_{tk}
+    \le
+    \overline{Q}_p \sum_{z \in \mathcal{Z}} c_{tz},
+    \quad \forall t \in \mathcal{T},\ \forall p \in \mathcal{P}.
+$$
+
 Assuming:
 
 - The mass of chemical dosed is small enough that it doesn't significantly change the volume of water being treated (i.e. $b_{st}$ is unchanged)
+- Chemical dosed has no effect on other parameters (e.g. dosing fluoride doesn't change pH, turbidity, etc.)
 
 ---
 
