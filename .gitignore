@@ -4,3 +4,4 @@ notes/imgs
 notes/questions.md
 .DS_Store
 model/ignore
+*.pyc
