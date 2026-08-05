@@ -87,7 +87,7 @@
     },
     "turbidity": {
       "min": 0,
-      "max": 8,
+      "max": 5,
       "transform": "identity"
     }
   }
