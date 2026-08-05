@@ -322,15 +322,15 @@ def print_results(data: Data, variables: dict, status: str, total_cost: float | 
     drawing_cost = sum(data.source_unit_cost[s] * a[s].value() for s in data.S)
     treatment_cost = sum(data.plant_unit_cost[t] * inflow[t] for t in data.T)
 
-    print(f"\tActivation: ${activation_cost:,.2f}")
-    print(f"\tDrawing:    ${drawing_cost:,.2f}")
-    print(f"\tTreatment:  ${treatment_cost:,.2f}")
+    print(f"  Activation: ${activation_cost:,.2f}")
+    print(f"  Drawing:    ${drawing_cost:,.2f}")
+    print(f"  Treatment:  ${treatment_cost:,.2f}")
 
     # Print demand satisfaction and slack
     print("\nDemand:")
     for z in data.Z:
         print(
-            f"\t{z}: {data.demand[z]:.1f} required, {delivered[z]:.1f} delivered "
+            f"  {z}: {data.demand[z]:.1f} required, {delivered[z]:.1f} delivered "
             f"({delivered[z] - data.demand[z]:+.1f} slack)"
         )
 
@@ -353,14 +353,14 @@ def print_results(data: Data, variables: dict, status: str, total_cost: float | 
             values.append(
                 f"{p}={blended:.2f} (safe: {lower:.2f}-{upper:.2f})"
             )  # Append the safe range of each parameter
-        print(f"\t{t}: {', '.join(values)}")
+        print(f"  {t}: {', '.join(values)}")
 
     # Compute and print capacity utilisation of each active source
     print("\nCapacity utilisation (active sources only):")
     for s in data.S:
         utilisation = 100 * a[s].value() / data.max_source_withdrawal[s]
         drawn, capacity = a[s].value(), data.max_source_withdrawal[s]
-        print(f"\t{s}: {drawn:.1f} / {capacity:.1f} ML/day ({utilisation:.0f}%)")
+        print(f"  {s}: {drawn:.1f} / {capacity:.1f} ML/day ({utilisation:.0f}%)")
 
 
 def main() -> None:
