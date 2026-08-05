@@ -105,7 +105,7 @@ $$
 \underline{M}_{tk}\epsilon_{tk} \le m_{tk} \le \overline{M}_{tk}\epsilon_{tk}, \quad \forall t \in \mathcal{T}, \forall k \in \mathcal{K}
 $$
 
-Restrict dosing at inactive plant (I think this is redundant - check properly against formulation doc):
+Restrict dosing at inactive plant:
 
 $$
 \epsilon_{tk} \le \beta_t, \quad \forall t \in \mathcal{T}, \forall k \in \mathcal{K}
@@ -126,7 +126,7 @@ $$
     \quad \forall t \in \mathcal{T},\ \forall p \in \mathcal{P}.
 $$
 
-As written in the formulation doc, $b_{st}$ is the water flow from source $s$ to plant $t$. The flow conservation constraint ensures $b_{st}=c{tz}$ but technically, dosing occurs after the water has been treated and is leaving the plant, so I think the water quality constraint has to be written on the outflow:
+As written in the formulation doc, $b_{st}$ is the water flow from source $s$ to plant $t$. The flow conservation constraint ensures $\sum_{s} b_{st}= \sum={z} c{tz}$ but technically, dosing occurs after the water has been treated and is leaving the plant, so I think the water quality constraint has to be written on the outflow:
 
 $$
    \underline{Q}_p \sum_{z \in \mathcal{Z}} c_{tz}
@@ -141,7 +141,7 @@ $$
 Assuming:
 
 - The mass of chemical dosed is small enough that it doesn't significantly change the volume of water being treated (i.e. $b_{st}$ is unchanged)
-- Chemical dosed has no effect on other parameters (e.g. dosing fluoride doesn't change pH, turbidity, etc.)
+- The effect of the chemical dosed is linear in the dose and independent of the water quality
 
 ---
 
