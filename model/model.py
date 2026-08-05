@@ -271,9 +271,8 @@ def build_model(data: Data) -> tuple[pulp.LpProblem, dict]:
 def solve(problem: pulp.LpProblem) -> tuple[str, float | None]:
     """Solve the problem and return the status and total cost (if optimal)."""
     problem.solve(pulp.HiGHS(msg=False))
-    status = pulp.LpStatus[problem.status]
-    total_cost = pulp.value(problem.objective) if status == pulp.LpStatusOptimal else None
-    return status, total_cost
+    optimal = problem.status == pulp.LpStatusOptimal
+    return pulp.LpStatus[problem.status], pulp.value(problem.objective) if optimal else None
 
 
 def print_results(data: Data, variables: dict, status: str, total_cost: float | None) -> None:
@@ -289,7 +288,10 @@ def print_results(data: Data, variables: dict, status: str, total_cost: float | 
     # Status and total cost
     print(f"Status: {status}")
     if total_cost is not None:
-        print(f"Total cost: ${total_cost:,.2f}/day\n")
+        print(f"Total cost: ${total_cost:.2f}/day\n")
+
+    if status != "Optimal":
+        return
 
     # Compute inflow (arriving at plant)
     inflow = {t: sum(b[(s, t)].value() for s in data.sources_into[t]) for t in data.T}
@@ -300,13 +302,9 @@ def print_results(data: Data, variables: dict, status: str, total_cost: float | 
     for t in data.T:
         print(f"{t}: beta={round(beta[t].value())}  inflow={inflow[t]:.1f} ML/day")
 
-    if status != "Optimal":
-        return
-
     # Compute delivered volume (leaving plant to zone)
     delivered = {z: sum(c[(t, z)].value() for t in data.plants_into[z]) for z in data.Z}
 
-    # Print flow volumes along arcs
     # Print flow volumes along arcs
     print("\nFlows:")
     for node_from, node_to in b:
