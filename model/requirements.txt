@@ -1,5 +1,0 @@
-cbcbox==2.929
-highspy==1.15.1
-numpy==2.5.1
-PuLP==3.3.2
-ruff==0.16.1
