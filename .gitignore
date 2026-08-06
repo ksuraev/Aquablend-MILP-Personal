@@ -3,5 +3,6 @@ pyproject.toml
 notes/imgs
 notes/questions.md
 .DS_Store
-model/ignore
 *.pyc
+code/src/ignore
+__pycache__/
