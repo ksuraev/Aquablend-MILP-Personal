@@ -59,15 +59,14 @@ def build_model(p: ModelParameters) -> tuple[pulp.LpProblem, dict[str, Any]]:
     arcs_from_source = {s: [k for k in p.source_plant_arcs if k[0] == s] for s in p.source_ids}
 
     # Volume arriving at each plant
-    def inflow(t: str):
-        return pulp.lpSum(b[k] for k in p.source_plant_arcs if k[1] == t)
+    inflow = {t: pulp.lpSum(b[k] for k in arcs_into_plant[t]) for t in p.plant_ids}
 
     # ============== Objective (section 4) ==============
 
     source_activation = pulp.lpSum(p.source_fixed_cost[s] * alpha[s] for s in p.source_ids)
     plant_activation = pulp.lpSum(p.plant_fixed_cost[t] * beta[t] for t in p.plant_ids)
     drawing_water = pulp.lpSum(p.source_unit_cost[s] * a[s] for s in p.source_ids)
-    treating_water = pulp.lpSum(p.plant_unit_treatment_cost[t] * inflow(t) for t in p.plant_ids)
+    treating_water = pulp.lpSum(p.plant_unit_treatment_cost[t] * inflow[t] for t in p.plant_ids)
 
     model += (source_activation + plant_activation + drawing_water + treating_water, "Total_Cost")
 
@@ -84,13 +83,13 @@ def build_model(p: ModelParameters) -> tuple[pulp.LpProblem, dict[str, Any]]:
 
     # Plant capacity and activation
     for t in p.plant_ids:
-        model += (inflow(t) >= p.plant_min_throughput[t] * beta[t], f"Plant_Min_{t}")
-        model += (inflow(t) <= p.plant_max_throughput[t] * beta[t], f"Plant_Max_{t}")
+        model += (inflow[t] >= p.plant_min_throughput[t] * beta[t], f"Plant_Min_{t}")
+        model += (inflow[t] <= p.plant_max_throughput[t] * beta[t], f"Plant_Max_{t}")
 
     # Plant flow conservation
     for t in p.plant_ids:
         model += (
-            pulp.lpSum(c[k] for k in arcs_from_plant[t]) == inflow(t),
+            pulp.lpSum(c[k] for k in arcs_from_plant[t]) == inflow[t],
             f"Plant_Conservation_{t}",
         )
 
@@ -114,8 +113,8 @@ def build_model(p: ModelParameters) -> tuple[pulp.LpProblem, dict[str, Any]]:
     for t in p.plant_ids:
         for q in p.quality_parameter_ids:
             load = pulp.lpSum(p.source_quality[(k[0], q)] * b[k] for k in arcs_into_plant[t])
-            model += (load >= p.quality_lower_bound[q] * inflow(t), f"Q_Min_{t}_{q}")
-            model += (load <= p.quality_upper_bound[q] * inflow(t), f"Q_Max_{t}_{q}")
+            model += (load >= p.quality_lower_bound[q] * inflow[t], f"Q_Min_{t}_{q}")
+            model += (load <= p.quality_upper_bound[q] * inflow[t], f"Q_Max_{t}_{q}")
 
     variables = {
         "alpha": alpha,
