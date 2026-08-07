@@ -152,6 +152,22 @@ def total_cost(model: pulp.LpProblem) -> float | None:
     return pulp.value(model.objective)
 
 
+def cost_breakdown(p: ModelParameters, v) -> dict[str, float]:
+    """Mirrors the objective in build_model for printing/reporting."""
+    draws = source_draws(p, v)
+    st, _ = flows(p, v)
+    inflow = {t: sum(f for k, f in st.items() if k[1] == t) for t in p.plant_ids}
+    alpha = {s: pulp.value(v["alpha"][s]) or 0.0 for s in p.source_ids}
+    beta = {t: pulp.value(v["beta"][t]) or 0.0 for t in p.plant_ids}
+
+    return {
+        "source activation": sum(p.source_fixed_cost[s] * alpha[s] for s in p.source_ids),
+        "plant activation": sum(p.plant_fixed_cost[t] * beta[t] for t in p.plant_ids),
+        "drawing water": sum(p.source_unit_cost[s] * draws[s] for s in p.source_ids),
+        "treatment": sum(p.plant_unit_treatment_cost[t] * inflow[t] for t in p.plant_ids),
+    }
+
+
 # =========================================================
 # Helper functions for convenience and not an output format.
 # =========================================================
