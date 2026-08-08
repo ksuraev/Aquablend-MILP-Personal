@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 import pulp
+
 from src.contracts import ModelParameters
 
 
@@ -27,7 +28,9 @@ def build_model(p: ModelParameters) -> tuple[pulp.LpProblem, dict[str, Any]]:
     # ============== Decision Variables (section 2.3) ==============
 
     # αₛ ∈ {0,1}, if source s is activated
-    alpha = {s: model.add_variable(f"alpha_{s}", cat=pulp.LpBinary) for s in p.source_ids}
+    alpha = {
+        s: model.add_variable(f"alpha_{s}", cat=pulp.LpBinary) for s in p.source_ids
+    }
 
     # aₛ ≥ 0, volume drawn from source s
     a = {s: model.add_variable(f"a_{s}", lowBound=0) for s in p.source_ids}
@@ -42,39 +45,70 @@ def build_model(p: ModelParameters) -> tuple[pulp.LpProblem, dict[str, Any]]:
     }
 
     # bₛₜ ≥ 0, volume of water from source s to plant t
-    b = {k: model.add_variable(f"b_{k[0]}_{k[1]}", lowBound=0) for k in p.source_plant_arcs}
+    b = {
+        k: model.add_variable(f"b_{k[0]}_{k[1]}", lowBound=0)
+        for k in p.source_plant_arcs
+    }
 
     # δₜz ∈ {0,1}, if plant t sends water to demand zone z
     delta = {
-        k: model.add_variable(f"delta_{k[0]}_{k[1]}", cat=pulp.LpBinary) for k in p.plant_zone_arcs
+        k: model.add_variable(f"delta_{k[0]}_{k[1]}", cat=pulp.LpBinary)
+        for k in p.plant_zone_arcs
     }
 
     # cₜz ≥ 0, volume of water from plant t to demand zone z
-    c = {k: model.add_variable(f"c_{k[0]}_{k[1]}", lowBound=0) for k in p.plant_zone_arcs}
+    c = {
+        k: model.add_variable(f"c_{k[0]}_{k[1]}", lowBound=0) for k in p.plant_zone_arcs
+    }
 
     # Adjacency lists for convenience, so we don't have to filter the arcs repeatedly in constraints
-    arcs_into_plant = {t: [k for k in p.source_plant_arcs if k[1] == t] for t in p.plant_ids}
-    arcs_from_plant = {t: [k for k in p.plant_zone_arcs if k[0] == t] for t in p.plant_ids}
-    arcs_into_zone = {z: [k for k in p.plant_zone_arcs if k[1] == z] for z in p.zone_ids}
-    arcs_from_source = {s: [k for k in p.source_plant_arcs if k[0] == s] for s in p.source_ids}
+    arcs_into_plant = {
+        t: [k for k in p.source_plant_arcs if k[1] == t] for t in p.plant_ids
+    }
+    arcs_from_plant = {
+        t: [k for k in p.plant_zone_arcs if k[0] == t] for t in p.plant_ids
+    }
+    arcs_into_zone = {
+        z: [k for k in p.plant_zone_arcs if k[1] == z] for z in p.zone_ids
+    }
+    arcs_from_source = {
+        s: [k for k in p.source_plant_arcs if k[0] == s] for s in p.source_ids
+    }
 
     # Volume arriving at each plant
     inflow = {t: pulp.lpSum(b[k] for k in arcs_into_plant[t]) for t in p.plant_ids}
 
     # ============== Objective (section 4) ==============
 
-    source_activation = pulp.lpSum(p.source_fixed_cost[s] * alpha[s] for s in p.source_ids)
+    source_activation = pulp.lpSum(
+        p.source_fixed_cost[s] * alpha[s] for s in p.source_ids
+    )
     plant_activation = pulp.lpSum(p.plant_fixed_cost[t] * beta[t] for t in p.plant_ids)
     drawing_water = pulp.lpSum(p.source_unit_cost[s] * a[s] for s in p.source_ids)
-    treating_water = pulp.lpSum(p.plant_unit_treatment_cost[t] * inflow[t] for t in p.plant_ids)
+    treating_water = pulp.lpSum(
+        p.plant_unit_treatment_cost[t] * inflow[t] for t in p.plant_ids
+    )
+    transferring_water = pulp.lpSum(
+        p.source_plant_transfer_cost[k] * b[k] for k in p.source_plant_arcs
+    ) + pulp.lpSum(p.plant_zone_transfer_cost[k] * c[k] for k in p.plant_zone_arcs)
 
-    model += (source_activation + plant_activation + drawing_water + treating_water, "Total_Cost")
+    model += (
+        source_activation
+        + plant_activation
+        + drawing_water
+        + treating_water
+        + transferring_water,
+        "Total_Cost",
+    )
 
     # ============= Constraints (section 5) ==============
 
     # Demand satisfaction
     for z in p.zone_ids:
-        model += (pulp.lpSum(c[k] for k in arcs_into_zone[z]) >= p.demand_by_zone[z], f"Demand_{z}")
+        model += (
+            pulp.lpSum(c[k] for k in arcs_into_zone[z]) >= p.demand_by_zone[z],
+            f"Demand_{z}",
+        )
 
     # Source capacity and activation
     for s in p.source_ids:
@@ -95,13 +129,22 @@ def build_model(p: ModelParameters) -> tuple[pulp.LpProblem, dict[str, Any]]:
 
     # Source flow conservation
     for s in p.source_ids:
-        model += (a[s] == pulp.lpSum(b[k] for k in arcs_from_source[s]), f"Source_Conservation_{s}")
+        model += (
+            a[s] == pulp.lpSum(b[k] for k in arcs_from_source[s]),
+            f"Source_Conservation_{s}",
+        )
 
     # Link capacity
     for k in p.source_plant_arcs:
-        model += (b[k] <= p.source_plant_link_capacity[k] * gamma[k], f"Link_ST_Cap_{k[0]}_{k[1]}")
+        model += (
+            b[k] <= p.source_plant_link_capacity[k] * gamma[k],
+            f"Link_ST_Cap_{k[0]}_{k[1]}",
+        )
     for k in p.plant_zone_arcs:
-        model += (c[k] <= p.plant_zone_link_capacity[k] * delta[k], f"Link_TZ_Cap_{k[0]}_{k[1]}")
+        model += (
+            c[k] <= p.plant_zone_link_capacity[k] * delta[k],
+            f"Link_TZ_Cap_{k[0]}_{k[1]}",
+        )
 
     # Links require active nodes
     for k in p.source_plant_arcs:
@@ -112,7 +155,9 @@ def build_model(p: ModelParameters) -> tuple[pulp.LpProblem, dict[str, Any]]:
     # Water quality
     for t in p.plant_ids:
         for q in p.quality_parameter_ids:
-            load = pulp.lpSum(p.source_quality[(k[0], q)] * b[k] for k in arcs_into_plant[t])
+            load = pulp.lpSum(
+                p.source_quality[(k[0], q)] * b[k] for k in arcs_into_plant[t]
+            )
             model += (load >= p.quality_lower_bound[q] * inflow[t], f"Q_Min_{t}_{q}")
             model += (load <= p.quality_upper_bound[q] * inflow[t], f"Q_Max_{t}_{q}")
 
@@ -128,7 +173,9 @@ def build_model(p: ModelParameters) -> tuple[pulp.LpProblem, dict[str, Any]]:
     return model, variables
 
 
-def solve(p: ModelParameters, msg: bool = False) -> tuple[pulp.LpProblem, dict[str, Any]]:
+def solve(
+    p: ModelParameters, msg: bool = False
+) -> tuple[pulp.LpProblem, dict[str, Any]]:
     """Invoke the HiGHS solver on the PuLP problem."""
     model, variables = build_model(p)
     model.solve(pulp.HiGHS(msg=msg))
@@ -155,16 +202,24 @@ def total_cost(model: pulp.LpProblem) -> float | None:
 def cost_breakdown(p: ModelParameters, v) -> dict[str, float]:
     """Mirrors the objective in build_model for printing/reporting."""
     draws = source_draws(p, v)
-    st, _ = flows(p, v)
+    st, tz = flows(p, v)
     inflow = {t: sum(f for k, f in st.items() if k[1] == t) for t in p.plant_ids}
     alpha = {s: pulp.value(v["alpha"][s]) or 0.0 for s in p.source_ids}
     beta = {t: pulp.value(v["beta"][t]) or 0.0 for t in p.plant_ids}
 
     return {
-        "source activation": sum(p.source_fixed_cost[s] * alpha[s] for s in p.source_ids),
+        "source activation": sum(
+            p.source_fixed_cost[s] * alpha[s] for s in p.source_ids
+        ),
         "plant activation": sum(p.plant_fixed_cost[t] * beta[t] for t in p.plant_ids),
         "drawing water": sum(p.source_unit_cost[s] * draws[s] for s in p.source_ids),
-        "treatment": sum(p.plant_unit_treatment_cost[t] * inflow[t] for t in p.plant_ids),
+        "treatment": sum(
+            p.plant_unit_treatment_cost[t] * inflow[t] for t in p.plant_ids
+        ),
+        "transfer": (
+            sum(p.source_plant_transfer_cost[k] * f for k, f in st.items())
+            + sum(p.plant_zone_transfer_cost[k] * f for k, f in tz.items())
+        ),
     }
 
 

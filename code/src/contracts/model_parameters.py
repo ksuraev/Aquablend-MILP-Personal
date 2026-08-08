@@ -1,7 +1,7 @@
 """Model-facing parameter contract.
 
 Mirrors the ``ModelParameters`` dataclass currently defined inside the team's
-``preprocessing.py``.
+``preprocessing.py`` and extends with arc transfer costs.
 
 https://github.com/ksuraev/Aqua-Blend-MILP-Team/blob/main/MILP/src/preprocessing.py
 
@@ -42,6 +42,10 @@ class ModelParameters:
     # Arc/link capacites
     source_plant_link_capacity: dict[tuple[str, str], float]
     plant_zone_link_capacity: dict[tuple[str, str], float]
+
+    # Arc/link transfer costs
+    source_plant_transfer_cost: dict[tuple[str, str], float]
+    plant_zone_transfer_cost: dict[tuple[str, str], float]
 
     # Transformed water-quality values and bounds
     source_quality: dict[tuple[str, str], float]
