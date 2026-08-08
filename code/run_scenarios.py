@@ -26,7 +26,7 @@ from src.model import (
 )
 from tests.scenarios import ALK, PH, TURB, ph_to_mol_l, toy, two_plants
 
-# Just nice terminal printing things
+# Just some nice terminal printing things
 WIDTH = shutil.get_terminal_size(fallback=(74, 24)).columns
 
 _COLOUR = sys.stdout.isatty()
@@ -63,7 +63,10 @@ def describe(p: ModelParameters) -> None:
         **{k: x for k, x in p.plant_zone_transfer_cost.items() if x},
     }
     if priced:
-        print("  arcs   " + "  ".join(f"{a}->{b} ${x:.2f}" for (a, b), x in priced.items()))
+        print(
+            "  arcs   "
+            + "  ".join(f"{a}->{b} ${x:.2f}" for (a, b), x in priced.items())
+        )
 
 
 def show(p: ModelParameters, title: str, note: str = "") -> None:
@@ -100,7 +103,8 @@ def show(p: ModelParameters, title: str, note: str = "") -> None:
     print(
         "delivered     "
         + "  ".join(
-            f"{z} {got[z]:.1f} of {p.demand_by_zone[z]:.1f} ({extra[z]:+.1f})" for z in p.zone_ids
+            f"{z} {got[z]:.1f} of {p.demand_by_zone[z]:.1f} ({extra[z]:+.1f})"
+            for z in p.zone_ids
         )
     )
 
